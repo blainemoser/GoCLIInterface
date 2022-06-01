@@ -20,6 +20,7 @@ func Inputs(c Configs, inputs []string) error {
 	var curIndex string
 	for i := 0; i < len(inputs); i++ {
 		v := strings.Trim(inputs[i], " ")
+		removeDashes(&v)
 		if strings.Contains(v, "=") {
 			err = getSplitConfigs(v, args, &result, &curIndex)
 		} else {
@@ -47,7 +48,6 @@ func getSplitConfigs(v string, args map[string]bool, result *map[string][]string
 }
 
 func appendConfig(curIndex *string, args map[string]bool, result *map[string][]string, arg string) error {
-	removeDashes(&arg)
 	if !args[*curIndex] {
 		return fmt.Errorf("the %s argument does not exist", *curIndex)
 	}
