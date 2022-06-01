@@ -7,7 +7,7 @@ import (
 
 type Configs interface {
 	// This function should return the expected arguments for the programme
-	Expected() map[string]string
+	Expected() map[string]bool
 
 	// This should handle the parsed arguments, however required
 	SetInputs(map[string][]string)
@@ -23,6 +23,7 @@ func Inputs(c Configs, inputs []string) error {
 		if strings.Contains(v, "=") {
 			err = getSplitConfigs(v, args, &result, &curIndex)
 		} else {
+			curIndex = v
 			err = appendConfig(&curIndex, args, &result, v)
 		}
 		if err != nil {
@@ -33,30 +34,27 @@ func Inputs(c Configs, inputs []string) error {
 	return nil
 }
 
-func getSplitConfigs(v string, args map[string]string, result *map[string][]string, curIndex *string) error {
+func getSplitConfigs(v string, args map[string]bool, result *map[string][]string, curIndex *string) error {
 	configs := strings.Split(v, "=")
-	var err error
-	var errs []error
-	for _, c := range configs {
-		c = strings.Trim(c, " ")
-		err = appendConfig(curIndex, args, result, c)
-		errs = append(errs, err)
+	if len(configs) != 2 {
+		return fmt.Errorf("incorrect argument '%s'", v)
 	}
+	*curIndex = configs[0]
+	c := strings.Trim(configs[1], " ")
+	var errs []error
+	errs = append(errs, appendConfig(curIndex, args, result, c))
 	return GetErrors(errs)
 }
 
-func appendConfig(curIndex *string, args map[string]string, result *map[string][]string, arg string) error {
+func appendConfig(curIndex *string, args map[string]bool, result *map[string][]string, arg string) error {
 	removeDashes(&arg)
-	if args[arg] == "" {
-		if (*result)[*curIndex] == nil {
-			err := fmt.Errorf("the %s argument does not exist", arg)
-			return err
-		}
-		(*result)[*curIndex] = append((*result)[*curIndex], arg)
-	} else {
-		*curIndex = args[arg]
+	if !args[*curIndex] {
+		return fmt.Errorf("the %s argument does not exist", *curIndex)
+	}
+	if (*result)[*curIndex] == nil {
 		(*result)[*curIndex] = make([]string, 0)
 	}
+	(*result)[*curIndex] = append((*result)[*curIndex], arg)
 	return nil
 }
 
